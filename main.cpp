@@ -1,72 +1,59 @@
 #include <GL/freeglut.h>
-#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <cmath>
 
-GLuint fps, msec;
+GLfloat alpha = 1.0f;
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
 	void render(void);
-	void reshape(int, int);
-
+	void cursor(int, int, int);
+	srand((unsigned) time(NULL));
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(800, 600);
-	glutCreateWindow("Aminacja idle + benchmark");
-	glutSetCursor(GLUT_CURSOR_NONE);
-	glutReshapeFunc(reshape);
-	glutIdleFunc(render);
+	glutInitWindowSize(600, 600);
+	glutCreateWindow("Okno renderowania OpenGL");
 	glutDisplayFunc(render);
-	fps = 0;
-	msec = glutGet(GLUT_ELAPSED_TIME);
-	glutMainLoop();
+	glutSpecialFunc(cursor);
+	glutIdleFunc(render);
 
+	glutMainLoop();
+	
 	return 0;
 }
 
 void render(void)
 {
+	GLfloat x, y, z, size[2];
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(0.2f, 0.2f, 0.4f, 1.0f);
+	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glColor3f(1.0f, 1.0f, 0.0f);
-	glutWireTeapot(0.50);
-	glRotatef(0.1f, 1.0f, 0.0f, 0.0f);
-	glRotatef(0.2f, 0.0f, 1.0f, 0.0f);
-	glRotatef(0.1f, 0.0f, 0.0f, 1.0f);
+	glColor4f(1.0f, 1.0f, 0.0f, alpha);
+	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_POINT_SMOOTH);
+	
+	glGetFloatv(GL_POINT_SIZE_RANGE, size);
+	glPointSize((size[1] - size[0])/4);
+	for(x = -1.0; x <=1.0; x+=0.05)
+	{
+		y = 0.5f * sin (2.0* M_PI * x); z=0.0f ;
+		glBegin(GL_POINTS);
+		glVertex3f(x, y, z);
+		glEnd();
+	}
+	
 	glFlush();
-	glutSwapBuffers();
-
-	if((glutGet(GLUT_ELAPSED_TIME) - msec) > 1000)
-	{
-		printf("frames/sec=%d , Mpixel/sec=%d\n", fps, (glutGet(GLUT_WINDOW_WIDTH) * glutGet(GLUT_WINDOW_HEIGHT) * fps ) >> 20);
-		msec = glutGet(GLUT_ELAPSED_TIME);
-		fps = 0;
-	}
-	else
-	{
-		fps++;
-	}
 }
 
-void reshape(int w, int h)
+void cursor(int key, int x, int y)
 {
-	GLdouble xo=-1.0f, x1=1.0f, yo=-1.0f, y1=1.0f, zo=-1.0f, z1=1.0f;
-	GLdouble q=(GLdouble)w/h;
-
-	glViewport(0, 0, w, h);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	if(w <= h)
+	switch(key)
 	{
-		glOrtho(xo, x1, yo/q, y1/q, zo, z1);
+		case GLUT_KEY_LEFT: if(alpha > 0.1) { alpha -= 0.1f; } break ;
+		case GLUT_KEY_RIGHT: if(alpha < 1.0) { alpha += 0.1f; } break ;
 	}
-	else
-	{
-		glOrtho(xo*q, x1*q, yo, y1, zo, z1);
-	}
-
-	glMatrixMode(GL_MODELVIEW);
 }
